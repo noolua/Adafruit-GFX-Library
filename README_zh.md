@@ -1,13 +1,10 @@
----
-typora-root-url: ./
----
 # 支持UTF8的改动说明
 
 
 
 ### 效果
 
-![README_zh.jpg](/README_zh.jpg)
+![README_zh.jpg](README_zh.jpg)
 
 
 
