@@ -180,3 +180,66 @@ void loop(){
 }
 ```
 
+### 测试2.13-TFT-ST7302代码
+```cpp
+#include <Arduino.h>
+#include "Adafruit_ST7302.h"
+#include "uufont.h"
+#include "Fonts/dinkie9_10pt.h"
+
+
+#define SCLK_PIN    14
+#define SID_PIN     13
+#define RST_PIN     27
+#define DC_PIN      15
+#define CS_PIN      2
+
+Adafruit_ST7302 screen(SID_PIN, SCLK_PIN, DC_PIN, RST_PIN, CS_PIN);
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial.println("set up screen");
+  screen.begin(26000000);
+  Serial.println("screen inited");
+  screen.setTextColor(0x1010);
+  screen.setUUFont(&Dinkie9demo_10pt);
+  screen.setTextSize(2);
+}
+
+
+static void drawTimeCounter(uint32_t ts_now, uint32_t freq, uint32_t loop_freq){
+  int32_t hour = (ts_now / 3600000) % 24;
+  int32_t min = (ts_now % 3600000) / 60000;
+  int32_t sec = (ts_now % 60000) / 1000;
+  int32_t msec = ts_now % 1000;
+
+  screen.clearDisplay();
+  screen.drawRoundRect(10, 10, 230, 100, 16, 0x11);
+  screen.setCursor(20, 30);
+  screen.printf("计时,%02d,%02d,%02d.%03d", hour, min, sec, msec);
+  screen.setCursor(20, 50);
+  screen.printf("FREQ, %dHz, %dHz", freq, loop_freq);
+  screen.display();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  static uint32_t ts_next = 0, ts_clear_count = 0, frame_count = 0, freq = 0, loop_count = 0, loop_freq = 0;
+  uint32_t ts_now = millis();
+  loop_count++;
+  if(ts_now > ts_next){
+    ts_next = ts_now + 50;
+    frame_count++;
+    drawTimeCounter(ts_now, freq, loop_freq);
+  }
+  if(ts_now > ts_clear_count){
+    freq = frame_count / 5;
+    loop_freq = loop_count / 5;
+    frame_count = 0;
+    loop_count = 0;
+    ts_clear_count = ts_now + 5000;
+  }
+  delay(1);
+}
+
