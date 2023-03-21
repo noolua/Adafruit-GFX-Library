@@ -1,7 +1,7 @@
 #include "Adafruit_ST7302.h"
 
 
-static uint8_t st7302_init[] = {
+const static uint8_t st7302_init[] PROGMEM = {
   0x01, 0x38,       // High Power Mode ON
   0x02, 0xeb, 0x02, // NVM Load Enable with not be trigger by sleep Out.
   0x02, 0xd7, 0x68, // NVM Load Control with Enable ID1/ID/ID3 Load, with Enable Source High/Low Voltage Load
@@ -29,6 +29,43 @@ static uint8_t st7302_init[] = {
   0x00              // END-FLAG
 };
 
+// REF: https://admin.osptek.com/uploads/HSD_21_3_ST_7305_20220523_a008a91258.txt
+const static uint8_t st7305_init[] PROGMEM = {
+  0x03, 0xd6, 0x17, 0x02, // NVM Load Control
+  0x02, 0xd1, 0x01, // Booster Enable switch, set enable
+  0x03, 0xc0, 0x0e, 0x05, // Gate Voltage Control: VGH=15V, VGL=-7.5V
+  0x05, 0xc1, 0x41, 0x41, 0x41, 0x41, // Source High Positive Voltage Control, set 5v
+  0x05, 0xc2, 0x32, 0x32, 0x32, 0x32, // Source Low Positive Voltage Control, set 1v
+  0x05, 0xc4, 0x4b, 0x4b, 0x4b, 0x4b, // Source High Negative Voltage Control, set -4v
+  0x05, 0xc5, 0x00, 0x00, 0x00, 0x00, // Source Low Negative Voltage Control, set 1v
+  0x03, 0xd8, 0xa6, 0xe9, // HPM=32Hz
+  0x02, 0xb2, 0x11,       //Frame Rate Control, HPM=32hz ; LPM=0.5hz
+  0x0b, 0xb3, 0xe5, 0xf6, 0x05, 0x46, 0x77, 0x77, 0x77, 0x77, 0x76, 0x45, //Update Period Gate EQ Control in HPM
+  0x09, 0xb4, 0x05, 0x46, 0x77, 0x77, 0x77, 0x77, 0x76, 0x45, // Update Period Gate EQ Control in LPM
+  0x02, 0xb7, 0x13,       // Source EQ Enable
+  0x02, 0xb0, 0x3f,       // Gate Line Setting: 252 lines
+  0x01, 0x11,             // Sleep out
+  0x02, 0xc9, 0x00,       // Source Voltage Select: VSHP1; VSLP1 ; VSHN1 ; VSLN1
+  0x04, 0xc7, 0xc1, 0x41, 0x26, // ultra low power code
+  0x02, 0x36, 0x00,       // Memory Data Access Control: MX=0, DO=0
+  0x02, 0x3a, 0x11,       // Data Format Select: 10:4write for 24bit ; 11: 3write for 24bit
+  0x02, 0xb9, 0x20,       // Gamma Mode Setting: 20: Mono 00:4GS
+  0x02, 0xb8, 0x25,       // Panel Setting, dot inversion; one line interval; dot inversion
+  // 0x01, 0x21,             // Inverse
+  0x03, 0x2a, 0x19, 0x23, // Column Address Setting
+  0x03, 0x2b, 0x00, 0x7c, // Row Address Setting
+  0x02, 0x35, 0x00,       // TE
+  0x02, 0xd0, 0xff,       // Auto power down
+  0x01, 0x39,             // 39 -> low power; 0x38 -> high power
+  0x01, 0x29,             // DISPLAY ON
+  0x00                    // END-FLAG
+};
+
+#if TFT_IC_DRIVER == TFT_IC_ST7302
+#define TFT_IC_INIT       st7302_init
+#elif TFT_IC_DRIVER == TFT_IC_ST7305
+#define TFT_IC_INIT       st7305_init
+#endif 
 
 Adafruit_ST7302::Adafruit_ST7302(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS)
   :Adafruit_GFX(ST7302_WIDTH, ST7302_HEIGHT){
@@ -58,18 +95,18 @@ void Adafruit_ST7302::begin(int32_t freq){
 
   /*
     Init LCD Driver
-    REF: ST7302 DATASHEET
+    REF: ST7302/ST7305 DATASHEET
   */
   int32_t cmd_pos = 0;
-  uint8_t cmd_sz = st7302_init[cmd_pos];
+  uint8_t cmd_sz = TFT_IC_INIT[cmd_pos];
   while(cmd_sz){
-    _send_command(st7302_init[cmd_pos + 1]);
+    _send_command(TFT_IC_INIT[cmd_pos + 1]);
     if(cmd_sz > 1){
-      _send_params(&st7302_init[cmd_pos+2], cmd_sz - 1);
+      _send_params(&TFT_IC_INIT[cmd_pos+2], cmd_sz - 1);
     }
     // next command
     cmd_pos += (cmd_sz + 1);
-    cmd_sz = st7302_init[cmd_pos];
+    cmd_sz = TFT_IC_INIT[cmd_pos];
   }
 }
 
@@ -141,7 +178,7 @@ void Adafruit_ST7302::_send_param(uint8_t param) {
   *_csport |= _cspinmask; 
 }
 
-void Adafruit_ST7302::_send_params(uint8_t *params, int params_sz) {
+void Adafruit_ST7302::_send_params(const uint8_t *params, int params_sz) {
   for(int i = 0; i < params_sz; i++){
     _send_param(params[i]);
   }

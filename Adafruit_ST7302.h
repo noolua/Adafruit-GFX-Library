@@ -8,6 +8,12 @@
 
 #define ST7302_WIDTH    250
 #define ST7302_HEIGHT   122
+#define TFT_IC_ST7302   7302
+#define TFT_IC_ST7305   7305
+
+#ifndef TFT_IC_DRIVER
+#define TFT_IC_DRIVER   TFT_IC_ST7302
+#endif
 
 #define LCD_COLUNM      (ST7302_WIDTH/2)
 #define LCD_ROW         (ST7302_HEIGHT/4+3)     // 122/4 = floor(30.5)+3 = 33
@@ -23,7 +29,7 @@ public:
 protected:
   void _flush_frame();
   void _send_param(uint8_t param);
-  void _send_params(uint8_t *params, int params_sz);
+  void _send_params(const uint8_t *params, int params_sz);
   void _send_command(uint8_t cmd);
   int8_t _sid, _sclk, _dc, _rst, _cs;
   uint8_t _frame_buffer[LCD_FRAME_SIZE];
