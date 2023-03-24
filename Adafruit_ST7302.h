@@ -8,12 +8,8 @@
 
 #define ST7302_WIDTH    250
 #define ST7302_HEIGHT   122
-#define TFT_IC_ST7302   7302
-#define TFT_IC_ST7305   7305
-
-#ifndef TFT_IC_DRIVER
-#define TFT_IC_DRIVER   TFT_IC_ST7302
-#endif
+#define TFT_IC_ST7302   "ST7302"
+#define TFT_IC_ST7305   "ST7305"
 
 #define LCD_COLUNM      (ST7302_WIDTH/2)
 #define LCD_ROW         (ST7302_HEIGHT/4+3)     // 122/4 = floor(30.5)+3 = 33
@@ -22,7 +18,7 @@
 class Adafruit_ST7302 : public Adafruit_GFX {
 public:
   Adafruit_ST7302(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS);
-  void begin(int32_t freq=8000000);
+  void begin(int32_t ic7302=0, int32_t freq=8000000);
   void clearDisplay();
   void display();
   virtual void drawPixel(int16_t x, int16_t y, uint16_t color);

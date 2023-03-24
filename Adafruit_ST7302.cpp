@@ -61,12 +61,6 @@ const static uint8_t st7305_init[] PROGMEM = {
   0x00                    // END-FLAG
 };
 
-#if TFT_IC_DRIVER == TFT_IC_ST7302
-#define TFT_IC_INIT       st7302_init
-#elif TFT_IC_DRIVER == TFT_IC_ST7305
-#define TFT_IC_INIT       st7305_init
-#endif 
-
 Adafruit_ST7302::Adafruit_ST7302(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS)
   :Adafruit_GFX(ST7302_WIDTH, ST7302_HEIGHT){
   _sid = SID;
@@ -77,7 +71,7 @@ Adafruit_ST7302::Adafruit_ST7302(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST,
   memset(_frame_buffer, 0, sizeof(_frame_buffer));
 }
 
-void Adafruit_ST7302::begin(int32_t freq){
+void Adafruit_ST7302::begin(int32_t ic7302, int32_t freq){
   pinMode(_dc, OUTPUT);
   pinMode(_cs, OUTPUT);
   pinMode(_rst, OUTPUT);
@@ -98,6 +92,7 @@ void Adafruit_ST7302::begin(int32_t freq){
     REF: ST7302/ST7305 DATASHEET
   */
   int32_t cmd_pos = 0;
+  const uint8_t *TFT_IC_INIT = ic7302 == 0 ? st7305_init : st7302_init;
   uint8_t cmd_sz = TFT_IC_INIT[cmd_pos];
   while(cmd_sz){
     _send_command(TFT_IC_INIT[cmd_pos + 1]);
