@@ -130,15 +130,18 @@ def LCDSetPixel(x, y):
 //https://blog.csdn.net/zhuoqingjoking97298/article/details/125880583#987000
 */
 void Adafruit_ST7302::drawPixel(int16_t x, int16_t y, uint16_t color){
+  int x2 = x >> 1;
+  int y4 = y >> 2;
+  int y2 = y % 4;
+  uint8_t mask = 1 << ((3-y2) << 1);
+  if (x % 2 == 0){
+    mask = mask << 1;
+  }
   if(color){
-    int x2 = x >> 1;
-    int y4 = y >> 2;
-    int y2 = y % 4;
-    uint8_t mask = 1 << ((3-y2) << 1);
-    if (x % 2 == 0){
-      mask = mask << 1;
-    }
     _frame_buffer[x2*LCD_ROW+y4] |= mask;
+  }else{
+    mask = ~mask;
+    _frame_buffer[x2*LCD_ROW+y4] &= mask;
   }
 }
 
