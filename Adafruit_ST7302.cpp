@@ -107,7 +107,8 @@ void Adafruit_ST7302::begin(int32_t ic7302, int32_t freq){
 
 void Adafruit_ST7302::clearDisplay(){
   // _send_command(0x28);
-  memset(_frame_buffer, 0, sizeof(_frame_buffer));
+  // memset(_frame_buffer, 0, sizeof(_frame_buffer));
+  memset(_window_buffer, 0, sizeof(_window_buffer));
 }
 
 void Adafruit_ST7302::display(){
@@ -115,6 +116,17 @@ void Adafruit_ST7302::display(){
   _flush_frame();
 }
 
+
+void Adafruit_ST7302::drawPixel(int16_t x, int16_t y, uint16_t color){
+  int idx = ((y*ST7302_WIDTH_PAD)+x) >> 3, bits = ((y*ST7302_WIDTH_PAD)+x)&0x7;
+  int mask = 1 << bits;
+  if(color){
+    _window_buffer[idx] |= mask;
+  }else{
+    mask = ~mask;
+    _window_buffer[idx] &= mask;
+  }
+}
 
 /*
 def LCDSetPixel(x, y):
@@ -129,28 +141,82 @@ def LCDSetPixel(x, y):
 ————————————————
 //https://blog.csdn.net/zhuoqingjoking97298/article/details/125880583#987000
 */
-void Adafruit_ST7302::drawPixel(int16_t x, int16_t y, uint16_t color){
-  int x2 = x >> 1;
-  int y4 = y >> 2;
-  int y2 = y % 4;
-  uint8_t mask = 1 << ((3-y2) << 1);
-  if (x % 2 == 0){
-    mask = mask << 1;
+uint32_t Adafruit_ST7302::_convert2frame(){
+  int c_end = ST7302_WIDTH_PAD - 32;
+  uint32_t *src = (uint32_t*)(_window_buffer);
+  for(int y=0;y<ST7302_HEIGHT;y++){
+    int y4 = y >> 2;
+    int y2 = y % 4;
+    int mask2 = 1 << ((3-y2) << 1);
+    for(int c=0;c <c_end;c+=32){
+      uint32_t data = *src;
+      src++;
+      for(int x=c;x<c+32;x += 2){
+        int x2 = x >> 1;
+        int idx_frame = x2*LCD_ROW+y4;
+        int bit = data & 0x3;
+        data = data >> 2;
+        int mask = mask2 << 1;
+
+        if(bit & 0x1){
+          _frame_buffer[idx_frame] |= mask;
+        }else{
+          mask = ~mask;
+          _frame_buffer[idx_frame] &= mask;
+        }
+        mask = mask2;
+        if(bit & 0x2){
+          _frame_buffer[idx_frame] |= mask;
+        }else{
+          mask = ~mask;
+          _frame_buffer[idx_frame] &= mask;
+        }
+      }
+    }
+    src++;
   }
-  if(color){
-    _frame_buffer[x2*LCD_ROW+y4] |= mask;
-  }else{
-    mask = ~mask;
-    _frame_buffer[x2*LCD_ROW+y4] &= mask;
+
+  for(int y=0;y<ST7302_HEIGHT;y++){
+    int y4 = y >> 2;
+    int y2 = y % 4;
+    uint8_t mask2 = 1 << ((3-y2) << 1);
+    for(int c=c_end;c <ST7302_WIDTH_PAD;c+=32){
+      uint32_t data = *(uint32_t*)&_window_buffer[((y*ST7302_WIDTH_PAD)+c)>>3];
+      for(int x=c;x<c+32;x+=2){
+        if(x >= ST7302_WIDTH)
+          continue;
+        int x2 = x >> 1;
+        int idx_frame = x2*LCD_ROW+y4;
+        int bit = data & 0x3;
+        data = data >> 2;
+        int mask = mask2 << 1;
+
+        if(bit & 0x1){
+          _frame_buffer[idx_frame] |= mask;
+        }else{
+          mask = ~mask;
+          _frame_buffer[idx_frame] &= mask;
+        }
+        mask = mask2;
+        if(bit & 0x2){
+          _frame_buffer[idx_frame] |= mask;
+        }else{
+          mask = ~mask;
+          _frame_buffer[idx_frame] &= mask;
+        }
+      }
+    }
   }
+  return 0;
 }
 
 void Adafruit_ST7302::_flush_frame() {
+  _convert2frame();
   /*
     Set LCDAddressSet(0, 11, 0, 125)
     11 = LCD_ROW * 8 / 24;
     125 = LCD_COLUNM;
-  */ 
+  */
   _send_command(0x2a);
   _send_param(0x19);
   _send_param(0x19+10);   // 11 - 1

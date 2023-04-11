@@ -8,12 +8,15 @@
 
 #define ST7302_WIDTH    250
 #define ST7302_HEIGHT   122
+#define ST7302_WIDTH_PAD 256
 #define TFT_IC_ST7302   "ST7302"
 #define TFT_IC_ST7305   "ST7305"
+
 
 #define LCD_COLUNM      (ST7302_WIDTH/2)
 #define LCD_ROW         (ST7302_HEIGHT/4+3)     // 122/4 = floor(30.5)+3 = 33
 #define LCD_FRAME_SIZE  (LCD_COLUNM * LCD_ROW)  // 125 * 33 = 4125 (bytes)
+#define LCD_WINDOW_SIZE ((ST7302_WIDTH_PAD*ST7302_HEIGHT)/8)  // (250+6)*122/8 = 3904 (bytes)
 
 class Adafruit_ST7302 : public Adafruit_GFX {
 public:
@@ -23,12 +26,14 @@ public:
   void display();
   virtual void drawPixel(int16_t x, int16_t y, uint16_t color);
 protected:
+  uint32_t _convert2frame();
   void _flush_frame();
   void _send_param(uint8_t param);
   void _send_params(const uint8_t *params, int params_sz);
   void _send_command(uint8_t cmd);
   int8_t _sid, _sclk, _dc, _rst, _cs;
   uint8_t _frame_buffer[LCD_FRAME_SIZE];
+  uint8_t _window_buffer[LCD_WINDOW_SIZE];
   volatile uint32_t *_csport, *_dcport;
   volatile uint32_t _cspinmask, _dcpinmask;  
 };
