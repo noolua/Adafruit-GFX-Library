@@ -184,7 +184,7 @@ uint32_t Adafruit_ST7302::_convert2frame(){
       uint32_t data = *(uint32_t*)&_window_buffer[((y*ST7302_WIDTH_PAD)+c)>>3];
       for(int x=c;x<c+32;x+=2){
         if(x >= ST7302_WIDTH)
-          continue;
+          break;
         int x2 = x >> 1;
         int idx_frame = x2*LCD_ROW+y4;
         int bit = data & 0x3;
