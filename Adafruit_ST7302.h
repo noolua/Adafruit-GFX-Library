@@ -25,6 +25,7 @@ public:
   void clearDisplay();
   void display();
   virtual void drawPixel(int16_t x, int16_t y, uint16_t color);
+  inline uint8_t *buffer() {return _window_buffer;}
 protected:
   uint32_t _convert2frame();
   void _flush_frame();
@@ -32,7 +33,9 @@ protected:
   void _send_params(const uint8_t *params, int params_sz);
   void _send_command(uint8_t cmd);
   int8_t _sid, _sclk, _dc, _rst, _cs;
+  int32_t _reserved_aligned0;
   uint8_t _frame_buffer[LCD_FRAME_SIZE];
+  int32_t _reserved_aligned1;
   uint8_t _window_buffer[LCD_WINDOW_SIZE];
   volatile uint32_t *_csport, *_dcport;
   volatile uint32_t _cspinmask, _dcpinmask;  
